@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>PDF File Content Reader</title>
+        <link href="https://s3-us-west-2.amazonaws.com/s.cdpn.io/3/wtf-forms.css" rel="stylesheet" />
+
+        <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet" />
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.87/pdf.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <style>
+            *,
+            *:before,
+            *:after {
+                -webkit-box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                box-sizing: border-box;
+            }
+            body {
+                background-image: linear-gradient(to right, #615be0, #00d4ff);
+                font: 1rem/1.5 "PT Sans", Arial, sans-serif;
+            }
+            header {
+                padding: 10px 30px;
+                text-align: center;
+                font-size: 4.5vw;
+                line-height: 12px;
+                color: white;
+            }
+            h2.headerTitle {
+                font-family: 'Anton', sans-serif;
+            }
+            h6.subHeadingTitle {
+                font-size: 0.4em;
+                font-weight: 300;
+            }
+            section {
+                display: -webkit-flex;
+                display: flex;
+                margin-bottom:40px;
+                /* align-items: flex-start; */
+                min-height: 300px;
+                height: auto;
+                justify-content: center;
+            }
+            footer {
+                text-align: center;
+                color: white;
+                height: 50px; 
+                position: relative; 
+                bottom:0px;
+                left: 0px;
+                width:100vw; 
+                opacity: 0.9;
+            }
+            p.copyRights {
+                font-size: 0.85em;
+            }
+            table {
+                width:100%;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            table, th, td {
+                border: 1px solid #dddede;
+                border-collapse: collapse;
+            }
+            th, td {
+                padding: 15px;
+                text-align: left;
+            }
+            #tableContainer tr:nth-child(even) {
+                background-color: #eee;
+            }
+            #tableContainer tr:nth-child(odd) {
+                background-color: #fff;
+            }
+            #tableContainer th {
+                background-color: #545c61;
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h2 class="headerTitle">SSC GPA and Percentage</h2>
+            <h6 class="subHeadingTitle">(Upload PDF Format Only)</h6>
+        </header>
+        <section>
+            <div style="width:80%; margin:0 auto;">
+                <div style="align-items: center; display: flex; justify-content: center;">
+                    <label class="file">
+                        <input type="file" id="file" aria-label="File browser example" name="file" accept="application/pdf">
+                        <span class="file-custom"></span>
+                    </label>
+                </div>
+                <p>&nbsp;</p>
+                <div id="pdfContent">
+                    <div style="display:flex; padding:30px; align-items:center; background-color: rgba(240, 248, 255, 0.3); border-radius: 8px; justify-content:center;">
+                        <p style="color:white; font-size:1.2em;">upload pdf document to view details<p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <footer>
+            <p class="copyRights">Copyrights &copy; 2020. Lakshman Kambam</p>
+        </footer>
+        
+        <script>
+            const exludeData = [
+                'SUBJECT', 
+                'GRADE', 
+                'POINT', 
+                'CO-CURRICULAR AREA', 
+                'VALUE EDUCATION & LIFE SKILLS', 
+                'ARTS & CULTURAL EDUCTION', 
+                'WORK & COMPUTER EDUCATION'
+            ];
+            $("#file").on("change", function(evt){
+            $("#pdfContent").html(`
+                <div style="display:flex; padding:30px; align-items:center; background-color: rgba(240, 248, 255, 0.3); border-radius: 8px; justify-content:center;">
+                    <p style="color:white; font-size:1.2em;">uploading file....<p>
+                </div>
+            `);
+            var file = evt.target.files[0];
+            var fileReader = new FileReader();
+                fileReader.onload = function () {
+                    var typedarray = new Uint8Array(this.result);
+                    getText(typedarray).then(function(text) {
+
+                        let splitTextToArray = text.split(','),
+                            rollNumber = splitTextToArray[splitTextToArray.indexOf('ROLL NUMBER') + 1],
+                            studentName = splitTextToArray[splitTextToArray.indexOf('CANDIDATE\'S NAME') + 1],
+                            guardianName = splitTextToArray[splitTextToArray.indexOf('Father\'s Name') + 1],
+                            streamType = splitTextToArray[splitTextToArray.indexOf('STREAM') + 1],
+                            dob = splitTextToArray[splitTextToArray.indexOf('Date Of Birth') + 1];
+                            
+                        $("#pdfContent").html(`
+                            <table id="tableContainer">
+                                <tr>
+                                    <th colspan="3">Marks Memo</th>
+                                </tr>
+                                <tr>
+                                    <td>Roll Number</td>
+                                    <td colspan="2">${rollNumber}</td>
+                                </tr>
+                                <tr>
+                                    <td>Student Name</td>
+                                    <td colspan="2">${studentName}</td>
+                                </tr>
+                                <tr>
+                                    <td>Guardian Name</td>
+                                    <td colspan="2">${guardianName}</td>
+                                </tr>
+                                <tr>
+                                    <td>Stream Type</td>
+                                    <td colspan="2">${streamType}</td>
+                                </tr>
+                                <tr>
+                                    <td>Date Of Birth (DOB)</td>
+                                    <td colspan="2">${dob}</td>
+                                </tr>
+                                <tr>
+                                    <td>Subject</td>
+                                    <td>Grade</td>
+                                    <td>Points</td>
+                                </tr>
+                                <tr>
+                                    <td>Telugu</td>
+                                    <td>A</td>
+                                    <td>9.5</td>
+                                </tr>
+                            </table>
+                        `);
+                    }, function (reason) { 
+                        alert('Seems this file is broken, please upload another file');
+                        console.error(reason);
+                    });
+                    function getText(typedarray) {
+                        var pdf = PDFJS.getDocument(typedarray);
+                        return pdf.then(function (pdf) {
+                            var maxPages = pdf.pdfInfo.numPages;
+                            var countPromises = [];
+                            for (var j = 1; j <= maxPages; j++) {
+                                var page = pdf.getPage(j);
+                                var txt = "";
+                                countPromises.push(page.then(function(page) {
+                                    var textContent = page.getTextContent();
+                                    return textContent.then(function(text) {
+                                        let startJoin = false, endJoin = false, foundFirstTime = 0;
+                                        let dataSamp = text.items.map(function (s) {
+                                            let excludeKeys = exludeData.indexOf()
+                                            if(s.str === 'ROLL NUMBER') {
+                                                foundFirstTime += 1;
+                                                startJoin = true;
+                                            }
+                                            if(s.str === 'CUMMULATIVE GRADE POINT AVERAGE (CGPA): ') {
+                                                endJoin = true;
+                                            }
+                                            if(s.str.trim() && exludeData.indexOf(s.str.trim()) === -1 && startJoin && !endJoin && foundFirstTime === 2) {
+                                                return s.str;
+                                            }
+                                        });
+                                        dataSamp = dataSamp.filter(item => item);
+                                        return dataSamp.join(',');
+                                    });
+                                }));
+                            }
+                            return Promise.all(countPromises).then(function(texts) {
+                                return texts.join('');
+                            });
+                        });
+                    }
+                };
+                fileReader.readAsArrayBuffer(file);
+            });
+        </script>
+    </body>
+</html>
